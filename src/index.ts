@@ -40,17 +40,13 @@ export default {
 		}
 
 		// Ask developers.nextzen.org if the API key is valid
-		const developersURL = new URL("https://d327fkngfq5a8w.cloudfront.net/verify");
+		const developersURL = new URL("https://developers.nextzen.org/verify");
 		developersURL.searchParams.append("api_key", apiKey);
 		const requestOrigin = request.headers.get("origin");
 		if (requestOrigin) {
 			developersURL.searchParams.append("origin", requestOrigin);
 		}
-		const devRequest = new Request(developersURL, {
-			headers: {
-				"Host": "developers.nextzen.org",
-			}
-		});
+		const devRequest = new Request(developersURL.toString());
 		console.log(`dev method: ${devRequest.method}, url: ${devRequest.url}, headers: ${JSON.stringify(Object.fromEntries([...devRequest.headers]))}`);
 		const devResponse = await fetch(devRequest, {
 			redirect: "manual",
