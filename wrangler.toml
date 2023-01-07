@@ -1,6 +1,9 @@
 name = "cloudflare-worker-nextzen"
 main = "src/index.ts"
 compatibility_date = "2023-01-07"
+routes = [
+    { pattern = "tile.nextzen.org/tilezen/*", zone_id = "11aca1210e4430d8e1d048512cd0ed3f" },
+]
 
 [[r2_buckets]]
 binding = 'R2'

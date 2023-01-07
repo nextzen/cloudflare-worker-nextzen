@@ -18,9 +18,6 @@ export default {
 		const cacheKey = new Request(cacheUrl.toString(), request);
 		const cache = caches.default;
 
-		// Check whether the value is already available in the cache
-		// if not, you will need to fetch it from origin, and store it in the cache
-		// for future access
 		let response = await cache.match(cacheKey);
 		if (response) {
 			console.log(`Overall cache hit`);
@@ -43,36 +40,39 @@ export default {
 		}
 
 		// Ask developers.nextzen.org if the API key is valid
-		const developersURL = new URL("https://developers.nextzen.org/verify");
+		const developersURL = new URL("https://d327fkngfq5a8w.cloudfront.net/verify");
 		developersURL.searchParams.append("api_key", apiKey);
 		const requestOrigin = request.headers.get("origin");
 		if (requestOrigin) {
 			developersURL.searchParams.append("origin", requestOrigin);
 		}
-		console.log(`Developers check is ${developersURL}`);
-		const devRequest = new Request(developersURL);
-		let devResponse = await cache.match(devRequest);
-		if (!devResponse) {
-			console.log(`Cache miss for dev`);
-			devResponse = await fetch(devRequest);
-			// Make headers mutable by copying the response
-			devResponse = new Response(devResponse.body, devResponse);
-			devResponse.headers.append('Cache-Control', 's-maxage=300');
-			ctx.waitUntil(cache.put(devRequest, devResponse.clone()));
+		const devRequest = new Request(developersURL, {
+			headers: {
+				"Host": "developers.nextzen.org",
+			}
+		});
+		console.log(`dev method: ${devRequest.method}, url: ${devRequest.url}, headers: ${JSON.stringify(Object.fromEntries([...devRequest.headers]))}`);
+		const devResponse = await fetch(devRequest, {
+			redirect: "manual",
+			// cf: {
+			// 	cacheTtl: 300,
+			// }
+		});
+
+		if (devResponse.status == 301 || devResponse.status == 302) {
+			console.log(`Dev response is redirect to ${devResponse.headers.get("location")}, and content ${await devResponse.text()}`);
 		} else {
-			console.log(`Cache hit for dev`);
-		}
+			const devData = await devResponse.json();
 
-		const devData = await devResponse.json();
-
-		console.log(`Dev response is ${devResponse.status}, ${JSON.stringify(devData)}`);
-		if (devData.result != "success") {
-			let resp = new Response(devData.message, {
-				status: 400,
-				statusText: `Invalid API Key`,
-			});
-			ctx.waitUntil(cache.put(cacheKey, resp.clone()));
-			return resp;
+			console.log(`Dev response is ${devResponse.status}, ${JSON.stringify(devData)}`);
+			if (devData.result != "success") {
+				let resp = new Response(devData.message, {
+					status: 400,
+					statusText: `Invalid API Key`,
+				});
+				ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+				return resp;
+			}
 		}
 
 		// Check cache for tile (without api_key to increase hit rate)
@@ -110,7 +110,8 @@ export default {
 
 		// Fetch from the origin
 		const originURL = new URL(request.url);
-		originURL.host = "tile.nextzen.org";
+		originURL.host = "nextzen-227080430.us-east-1.elb.amazonaws.com";
+		originURL.protocol = "http";
 		const originRequest = new Request(originURL.toString(), request);
 		console.log(`Origin URL: ${originURL}`);
 
@@ -118,14 +119,17 @@ export default {
 
 		console.log(`Origin response code: ${response.status}`);
 
-		// Put it in the cache no-api-key cache
-		ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
+		if (response.status == 200) {
+			// Put it in the cache no-api-key cache
+			await cache.put(cachedTileKey, response.clone());
 
-		const tees = response.body.tee();
-		// ... and store it in R2 as well
-		await env.R2.put(r2objectName, tees[0], {
-			httpMetadata: response.headers,
-		});
+			// ... and store it in R2 as well
+			const responseBuffer = await response.clone().arrayBuffer();
+			await env.R2.put(r2objectName, responseBuffer, {
+				httpMetadata: response.headers,
+			});
+		}
+
 		return response;
 	},
 };
