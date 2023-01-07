@@ -1,0 +1,8 @@
+name = "cloudflare-worker-nextzen"
+main = "src/index.ts"
+compatibility_date = "2023-01-07"
+
+[[r2_buckets]]
+binding = 'R2'
+bucket_name = 'nextzen'
+preview_bucket_name = 'nextzen-dev'
