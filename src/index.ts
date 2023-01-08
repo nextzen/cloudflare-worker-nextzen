@@ -40,7 +40,7 @@ export default {
 		}
 
 		// Ask developers.nextzen.org if the API key is valid
-		const developersURL = new URL("https://developers.nextzen.org/verify");
+		const developersURL = new URL("https://0b59atforl.execute-api.us-east-1.amazonaws.com/prod/verify");
 		developersURL.searchParams.append("api_key", apiKey);
 		const requestOrigin = request.headers.get("origin");
 		if (requestOrigin) {
@@ -50,13 +50,13 @@ export default {
 		console.log(`dev method: ${devRequest.method}, url: ${devRequest.url}, headers: ${JSON.stringify(Object.fromEntries([...devRequest.headers]))}`);
 		const devResponse = await fetch(devRequest, {
 			redirect: "manual",
-			// cf: {
-			// 	cacheTtl: 300,
-			// }
+			cf: {
+				cacheTtl: 300,
+			}
 		});
 
 		if (devResponse.status == 301 || devResponse.status == 302) {
-			console.log(`Dev response is redirect to ${devResponse.headers.get("location")}, and content ${await devResponse.text()}`);
+			console.log(`Dev response is url ${devResponse.url}, redirect to ${devResponse.headers.get("location")}, content ${await devResponse.text()}`);
 		} else {
 			const devData = await devResponse.json();
 
