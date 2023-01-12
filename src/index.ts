@@ -110,6 +110,7 @@ export default {
 					headers
 				});
 				ctx.waitUntil(cache.put(cachedTileKey, resp.clone()));
+				ctx.waitUntil(cache.put(cacheKey, resp.clone()));
 				return resp;
 			} else {
 				console.log(`R2 miss on ${cachedTileURL} from ${r2objectName}`);
