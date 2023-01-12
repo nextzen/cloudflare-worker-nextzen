@@ -54,7 +54,8 @@ export default {
 		const devResponse = await fetch(devRequest, {
 			redirect: "manual",
 			cf: {
-				cacheTtl: 300,
+				cacheTtl: 900,
+				cacheEverything: true,
 			}
 		});
 
@@ -63,7 +64,7 @@ export default {
 		} else {
 			const devData = await devResponse.json();
 
-			console.log(`Dev response is ${devResponse.status}, ${JSON.stringify(devData)}`);
+			console.log(`Dev response is ${devResponse.status}, cache: ${devResponse.headers.get("cf-cache-status")}, ${JSON.stringify(devData)}`);
 			if (devData.result != "success") {
 				let resp = new Response(devData.message, {
 					status: 400,
