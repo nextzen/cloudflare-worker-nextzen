@@ -34,6 +34,9 @@ export default {
 			let resp = new Response(`An API key is required`, {
 				status: 400,
 				statusText: `Missing API Key`,
+				headers: {
+					"access-control-allow-origin": "*",
+				},
 			});
 			ctx.waitUntil(cache.put(cacheKey, resp.clone()));
 			return resp;
@@ -65,6 +68,9 @@ export default {
 				let resp = new Response(devData.message, {
 					status: 400,
 					statusText: `Invalid API Key`,
+					headers: {
+						"access-control-allow-origin": "*",
+					},
 				});
 				ctx.waitUntil(cache.put(cacheKey, resp.clone()));
 				return resp;
@@ -94,6 +100,7 @@ export default {
 				const headers = new Headers()
 				r2TileObj.writeHttpMetadata(headers)
 				headers.set('etag', r2TileObj.httpEtag)
+				headers.set('access-control-allow-origin', '*');
 				const resp = new Response(r2TileObj.body, {
 					headers
 				});
