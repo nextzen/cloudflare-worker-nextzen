@@ -88,6 +88,10 @@ export default {
 		const cachedTile = await cache.match(cachedTileKey);
 		if (cachedTile) {
 			console.log(`Cache hit on ${cachedTileURL}`);
+
+			// Put it in the cache for the original request
+			ctx.waitUntil(cache.put(cacheKey, cachedTile.clone()));
+
 			return cachedTile;
 		} else {
 			console.log(`Cache miss on ${cachedTileURL}`);
