@@ -135,9 +135,6 @@ export default {
 			// Put it in the cache no-api-key cache
 			ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
 
-			// ... and in the cache for the original request
-			ctx.waitUntil(cache.put(cacheKey, response.clone()));
-
 			// ... and store it in R2 as well
 			const responseBuffer = await response.clone().arrayBuffer();
 			// @ts-ignore
@@ -145,6 +142,9 @@ export default {
 				httpMetadata: response.headers,
 			}));
 		}
+
+		// Always cache for the original request so we get non-200 responses too
+		ctx.waitUntil(cache.put(cacheKey, response.clone()));
 
 		return response;
 	},
