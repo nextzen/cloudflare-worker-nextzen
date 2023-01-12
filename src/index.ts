@@ -109,8 +109,8 @@ export default {
 				const resp = new Response(r2TileObj.body, {
 					headers
 				});
-				ctx.waitUntil(cache.put(cachedTileKey, resp.clone()));
-				ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+				ctx.waitUntil(cache.put(cachedTileKey, resp));
+				ctx.waitUntil(cache.put(cacheKey, resp));
 				return resp;
 			} else {
 				console.log(`R2 miss on ${cachedTileURL} from ${r2objectName}`);
