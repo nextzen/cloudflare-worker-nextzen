@@ -122,15 +122,23 @@ export default {
 
 		console.log(`Origin response code: ${response.status}`);
 
+		// Copy the response, so we can modify its headers to add CORS
+		response = new Response(response.body, response);
+		response.headers.set('access-control-allow-origin', '*');
+
 		if (response.status == 200) {
 			// Put it in the cache no-api-key cache
-			await cache.put(cachedTileKey, response.clone());
+			ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
+
+			// ... and in the cache for the original request
+			ctx.waitUntil(cache.put(cacheKey, response.clone()));
 
 			// ... and store it in R2 as well
 			const responseBuffer = await response.clone().arrayBuffer();
-			await env.R2.put(r2objectName, responseBuffer, {
+			// @ts-ignore
+			ctx.waitUntil(env.R2.put(r2objectName, responseBuffer, {
 				httpMetadata: response.headers,
-			});
+			}));
 		}
 
 		return response;
