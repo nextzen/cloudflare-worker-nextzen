@@ -106,12 +106,23 @@ export default {
 				r2TileObj.writeHttpMetadata(headers)
 				headers.set('etag', r2TileObj.httpEtag)
 				headers.set('access-control-allow-origin', '*');
-				const resp = new Response(r2TileObj.body, {
+				const bodyTee = r2TileObj.body.tee();
+				const respForReturn = new Response(bodyTee[0], {
 					headers
 				});
-				ctx.waitUntil(cache.put(cachedTileKey, resp));
-				ctx.waitUntil(cache.put(cacheKey, resp));
-				return resp;
+
+				const bodyTeeForCaches = bodyTee[1].tee();
+				const respForOverallTile = new Response(bodyTeeForCaches[1], {
+					headers: headers,
+				});
+				await (cache.put(cacheKey, respForOverallTile));
+
+				const respForBareTile = new Response(bodyTeeForCaches[0], {
+					headers: headers,
+				});
+				await (cache.put(cachedTileKey, respForBareTile));
+
+				return respForReturn;
 			} else {
 				console.log(`R2 miss on ${cachedTileURL} from ${r2objectName}`);
 			}
