@@ -128,7 +128,41 @@ export default {
 			}
 		}
 
-		// As of March 1, we return 404 instead of hitting Nextzen AWS account
+		if (r2objectName.startsWith("tile.nextzen.org/tilezen/terrain/")) {
+			// As of 2023-04-28: we will make a request to a go-zaloa lambda to do terrain tiles
+			const originURL = new URL(request.url);
+			originURL.host = "uhcsj5wbqgz6ndoptpomyfoxh40hibis.lambda-url.us-east-1.on.aws";
+			originURL.protocol = "https";
+			const originRequest = new Request(originURL.toString(), request);
+			console.log(`Origin URL: ${originURL}`);
+
+			response = await fetch(originRequest);
+
+			console.log(`Origin response code: ${response.status}`);
+
+			// Copy the response, so we can modify its headers to add CORS
+			response = new Response(response.body, response);
+			response.headers.set('access-control-allow-origin', '*');
+
+			if (response.status == 200) {
+				// Put it in the cache no-api-key cache
+				ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
+
+				// ... and store it in R2 as well
+				const responseBuffer = await response.clone().arrayBuffer();
+				// @ts-ignore
+				ctx.waitUntil(env.R2.put(r2objectName, responseBuffer, {
+					httpMetadata: response.headers,
+				}));
+			}
+
+			// Always cache for the original request so we get non-200 responses too
+			ctx.waitUntil(cache.put(cacheKey, response.clone()));
+
+			return response;
+		}
+
+		// As of 2023-03-01: we return 404 instead of hitting Nextzen AWS account
 		console.log(`Returning 404 instead of making request to Nextzen`);
 		return new Response(`Nextzen is experimenting with a lower cost cached mode. Please contact hello@nextzen.org with questions.`, {
 			status: 404,
