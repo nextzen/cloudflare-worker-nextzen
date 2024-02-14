@@ -26,6 +26,33 @@ export default {
 			console.log(`Overall cache miss`);
 		}
 
+		// Handle an uncached request for the preview page by fetching it from R2.
+		// Note that we don't check API key for this request on purpose.
+		if (cacheUrl.pathname === "/preview.html") {
+			const r2PreviewObj = await env.R2.get("tile.nextzen.org/preview.html");
+			if (!r2PreviewObj) {
+				console.log(`R2 miss on preview.html`);
+				return new Response(`Not found on R2`, {
+					status: 404,
+					statusText: `Not Found`,
+				});
+			}
+
+			console.log(`R2 hit on preview.html`);
+			const headers = new Headers()
+			r2PreviewObj.writeHttpMetadata(headers)
+			headers.set('etag', r2PreviewObj.httpEtag)
+			const bodyTee = r2PreviewObj.body.tee();
+			const resp = new Response(bodyTee[0], {
+				headers
+			});
+			const respForCaches = new Response(bodyTee[1], {
+				headers: headers,
+			});
+			await (cache.put(cacheKey, respForCaches));
+			return resp;
+		}
+
 		// Check for API key
 		const params = cacheUrl.searchParams;
 
