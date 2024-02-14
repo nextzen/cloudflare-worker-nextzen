@@ -144,8 +144,11 @@ export default {
 				});
 				await (cache.put(cacheKey, respForOverallTile));
 
+				// Cache the internal tile without the API key for 2 years
+				const headersForBareTile = new Headers(headers);
+				headersForBareTile.set('cache-control', 'public, max-age=63072000, immutable');
 				const respForBareTile = new Response(bodyTeeForCaches[0], {
-					headers: headers,
+					headers: headersForBareTile,
 				});
 				await (cache.put(cachedTileKey, respForBareTile));
 
@@ -172,8 +175,11 @@ export default {
 			response.headers.set('access-control-allow-origin', '*');
 
 			if (response.status == 200) {
-				// Put it in the cache no-api-key cache
-				ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
+				// Put it in the cache no-api-key cache for 2 years
+				const clonedResponse = response.clone();
+				const responseForCache = new Response(clonedResponse.body, clonedResponse);
+				responseForCache.headers.set('cache-control', 'public, max-age=63072000, immutable');
+				ctx.waitUntil(cache.put(cachedTileKey, responseForCache));
 
 				// ... and store it in R2 as well
 				const responseBuffer = await response.clone().arrayBuffer();
@@ -206,8 +212,11 @@ export default {
 			response.headers.set('access-control-allow-origin', '*');
 
 			if (response.status == 200) {
-				// Put it in the cache no-api-key cache
-				ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
+				// Put it in the cache no-api-key cache for 2 years
+				const clonedResponse = response.clone();
+				const responseForCache = new Response(clonedResponse.body, clonedResponse);
+				responseForCache.headers.set('cache-control', 'public, max-age=63072000, immutable');
+				ctx.waitUntil(cache.put(cachedTileKey, responseForCache));
 
 				// ... and store it in R2 as well
 				const responseBuffer = await response.clone().arrayBuffer();
