@@ -187,6 +187,40 @@ export default {
 			ctx.waitUntil(cache.put(cacheKey, response.clone()));
 
 			return response;
+		} else if (r2objectName.startsWith("tile.nextzen.org/tilezen/vector/")) {
+			// As of 2023-09-07: We will make a request to tapalcatl lambda to fetch missing vector tiles
+
+			const originURL = new URL(request.url);
+			originURL.host = "51prm3zn62.execute-api.us-east-1.amazonaws.com";
+			originURL.protocol = "https";
+			originURL.pathname = "/dev" + originURL.pathname;
+			const originRequest = new Request(originURL.toString(), request);
+			console.log(`Origin URL: ${originURL}`);
+
+			response = await fetch(originRequest);
+
+			console.log(`Origin response code: ${response.status}`);
+
+			// Copy the response, so we can modify its headers to add CORS
+			response = new Response(response.body, response);
+			response.headers.set('access-control-allow-origin', '*');
+
+			if (response.status == 200) {
+				// Put it in the cache no-api-key cache
+				ctx.waitUntil(cache.put(cachedTileKey, response.clone()));
+
+				// ... and store it in R2 as well
+				const responseBuffer = await response.clone().arrayBuffer();
+				// @ts-ignore
+				ctx.waitUntil(env.R2.put(r2objectName, responseBuffer, {
+					httpMetadata: response.headers,
+				}));
+			}
+
+			// Always cache for the original request so we get non-200 responses too
+			ctx.waitUntil(cache.put(cacheKey, response.clone()));
+
+			return response;
 		}
 
 		// As of 2023-03-01: we return 404 instead of hitting Nextzen AWS account
