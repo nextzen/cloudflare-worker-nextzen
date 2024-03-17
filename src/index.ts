@@ -22,11 +22,13 @@ export default {
 		const apiKey = cacheUrl.searchParams.get("api_key");
 		const origin = request.headers.get("origin");
 		const referer = request.headers.get("referer");
+		const userAgent = request.headers.get("user-agent");
 		console.log(JSON.stringify({
 			"path": cacheUrl.pathname,
 			"api_key": apiKey,
 			"origin": origin,
 			"referer": referer,
+			"user_agent": userAgent,
 		}));
 
 		let response = await cache.match(cacheKey);
