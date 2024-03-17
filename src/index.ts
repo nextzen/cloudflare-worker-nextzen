@@ -18,6 +18,12 @@ export default {
 		const cacheKey = new Request(cacheUrl.toString(), request);
 		const cache = caches.default;
 
+		// Log the API key, origin, and referrer for debugging
+		const apiKey = cacheUrl.searchParams.get("api_key");
+		const origin = request.headers.get("origin");
+		const referer = request.headers.get("referer");
+		console.log(JSON.stringify({ "api_key": apiKey, "origin": origin, "referer": referer }));
+
 		let response = await cache.match(cacheKey);
 		if (response) {
 			console.log(`Overall cache hit`);
@@ -54,9 +60,6 @@ export default {
 		}
 
 		// Check for API key
-		const params = cacheUrl.searchParams;
-
-		const apiKey = params.get("api_key");
 		if (!apiKey) {
 			let resp = new Response(`An API key is required`, {
 				status: 400,
