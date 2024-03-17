@@ -176,6 +176,8 @@ export default {
 			originURL.host = "uhcsj5wbqgz6ndoptpomyfoxh40hibis.lambda-url.us-east-1.on.aws";
 			originURL.protocol = "https";
 			const originRequest = new Request(originURL.toString(), request);
+			// Remove the if-none-match header so we always get a response from the lambda
+			originRequest.headers.delete('if-none-match');
 			console.log(`Origin URL: ${originURL}`);
 
 			response = await fetch(originRequest);
@@ -213,6 +215,8 @@ export default {
 			originURL.protocol = "https";
 			originURL.pathname = "/dev" + originURL.pathname;
 			const originRequest = new Request(originURL.toString(), request);
+			// Remove the if-none-match header so we always get a response from the lambda
+			originRequest.headers.delete('if-none-match');
 			console.log(`Origin URL: ${originURL}`);
 
 			response = await fetch(originRequest);
