@@ -78,6 +78,7 @@ export default {
 				},
 			});
 			ctx.waitUntil(cache.put(cacheKey, resp.clone()));
+			console.log(`No API key`);
 			return resp;
 		}
 
