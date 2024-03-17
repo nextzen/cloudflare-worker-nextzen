@@ -23,12 +23,14 @@ export default {
 		const origin = request.headers.get("origin");
 		const referer = request.headers.get("referer");
 		const userAgent = request.headers.get("user-agent");
+		const requestingIp = request.headers.get("cf-connecting-ip");
 		console.log(JSON.stringify({
 			"path": cacheUrl.pathname,
 			"api_key": apiKey,
 			"origin": origin,
 			"referer": referer,
 			"user_agent": userAgent,
+			"requesting_ip": requestingIp,
 		}));
 
 		let response = await cache.match(cacheKey);
